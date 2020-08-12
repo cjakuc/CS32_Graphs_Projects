@@ -1,4 +1,4 @@
-from util import Queue
+from util import Queue, Stack
 
 class Graph:
 
@@ -10,7 +10,8 @@ class Graph:
         """
         Add a vertex to the graph.
         """
-        self.vertices[vertex_id] = set()
+        if vertex_id not in self.vertices:
+            self.vertices[vertex_id] = set()
 
     def add_edge(self, v1, v2):
         """
@@ -31,37 +32,25 @@ class Graph:
 def earliest_ancestor(ancestors, starting_node):
     graph = Graph()
     for pair in ancestors:
-        if pair[0] not in graph.vertices:
-            graph.add_vertex(pair[0])
-        if pair[1] not in graph.vertices:
-            graph.add_vertex(pair[1])
+        graph.add_vertex(pair[0])
+        graph.add_vertex(pair[1])
         graph.add_edge(v1=pair[1],v2=pair[0])
-    if graph.get_parents(starting_node) == set():
-        # print(starting_node)
-        # print(graph.get_parents(starting_node))
-        return -1
     
-    max_depth = 0
-    max_depth_id = starting_node
+    max_depth = 1
+    max_depth_id = -1
     q = Queue()
-    visited = set()
     q.enqueue([starting_node])
     while q.size() > 0:
         path = q.dequeue()
         v = path[-1]
 
-        if v not in visited:
-            visited.add(v)
-            if len(path) > max_depth:
-                max_depth = len(path)
-                max_depth_id = v
-            elif len(path) == max_depth and v < max_depth_id:
-                max_depth = len(path)
-                max_depth_id = v
-            for parent in graph.get_parents(v):
-                parent_path = path.copy()
-                parent_path.append(parent)
-                q.enqueue(parent_path)
+        if (len(path) >= max_depth and v < max_depth_id) or (len(path) > max_depth):
+            max_depth = len(path)
+            max_depth_id = v
+        for parent in graph.get_parents(v):
+            parent_path = path.copy()
+            parent_path.append(parent)
+            q.enqueue(parent_path)
     return max_depth_id
 
 
