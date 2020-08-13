@@ -95,7 +95,7 @@ class SocialGraph:
         while q.size() > 0:
             path = q.dequeue()
             last_id = path[-1]
-            if last_id not in list(visited.keys()):
+            if last_id not in visited.keys():
                 visited[last_id] = path
                 for next_id in self.get_neighbors(last_id):
                     neighbor_path = path.copy()

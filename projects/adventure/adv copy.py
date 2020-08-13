@@ -5,6 +5,8 @@ from util import Stack, Queue
 
 import random
 from ast import literal_eval
+import time
+
 
 # Load world
 world = World()
@@ -31,10 +33,15 @@ player = Player(world.starting_room)
 traversal_path = []
 # Create a traversal graph
 ## Key = each room in the world, value = what's in each direction
+### Set value of all available exits/directions to "?"
+all_rooms = world.rooms
+unexplored_rooms = {ID: room.get_exits() for ID, room in all_rooms.items()}
 trav_graph = {}
 for i in range(len(room_graph)):
     trav_graph[i] = {}
-
+    for val in unexplored_rooms[i]:
+        trav_graph[i][val] = "?"
+# print(trav_graph)
 # Traverse through all the rooms, logging everything as we go
 
 def opposite_dir(d):
@@ -50,26 +57,20 @@ def opposite_dir(d):
     elif d == "w":
         return "e"
 
+rooms_to_check = trav_graph.copy()
 # Check to see if there are still unexplored rooms
 rooms_unexplored = True
-print(len(room_graph))
 while rooms_unexplored == True:
     # Pick an unexplored direction and use dft to traverse
     ## Find unexplored directions in current room
-    unexplored = []
     current_room = player.current_room
-    for direction in current_room.get_exits():
-        if direction not in trav_graph[current_room.id]:
-            trav_graph[current_room.id][direction] = "?"
-            unexplored.append(direction)
-        elif trav_graph[current_room.id][direction] == "?":
-            unexplored.append(direction)
     # Check if current room has unexplored exits, if it does traverse and log
-    ## If length of unexplored >= 2, save the room ID
-    # if len(unexplored) >= 2:
-    #     last_unexplored = player.current_room.id
-    if len(unexplored) > 0:
-        direction = random.choice(unexplored)
+    unexplored_dirs = []
+    for key in trav_graph[current_room.id]:
+        if trav_graph[current_room.id][key] == "?":
+            unexplored_dirs.append(key)
+    if len(unexplored_dirs) > 0:
+        direction = random.choice(unexplored_dirs)
 
         # Move and log it in traversal path
         player.travel(direction)
@@ -83,40 +84,42 @@ while rooms_unexplored == True:
         trav_graph[old_room.id][direction] = current_room.id
         trav_graph[current_room.id][opposite_dir(direction)] = old_room.id
 
-        # Check all exits
-        for direction in current_room.get_exits():
-            if direction not in trav_graph[current_room.id]:
-                trav_graph[current_room.id][direction] = "?"
+        # Check if the old room has unexplored exits, if not then delete it from rooms_to_check
+        if "?" not in trav_graph[old_room.id].values():
+            rooms_to_check.pop(old_room.id, None)
+        # Check if the current room has unexplored exits, if not then delete it from rooms_to_check
+        if "?" not in trav_graph[current_room.id].values():
+            rooms_to_check.pop(current_room.id, None)
 
     # If current room didn't have unexplored exits, try to find the closest room w/ exits
     else:
-        q = Queue()
-        # Queue a copy of the traversal path
-        trav_path_copy = traversal_path.copy()
-        q.enqueue(trav_path_copy)
-        # Move in the opposite direction while queue size > 0
+        q = Queue()        
+        q.enqueue([opposite_dir(traversal_path[-1])])
+
+        # Move along the path while queue size > 0
         while q.size() > 0:
             path = q.dequeue()
-            direction = opposite_dir(path[-1])
-            # Move and log
-            player.travel(direction)
-            traversal_path.append(direction)
-            # If current room has unexplored exits, break loop
-            if "?" in trav_graph[player.current_room.id].values():
+            checked_room = current_room.id
+
+            # If queued room has unexplored exits, move+log, and break loop
+            for move in path:
+                checked_room = trav_graph[checked_room][move]
+            if checked_room in rooms_to_check:
+                # Move and log
+                for move in path:
+                    player.travel(move)
+                    traversal_path.append(move)
                 break
             # Else enqueue next move
             else:
-                if len(path) > 0:
+                for d in trav_graph[checked_room].keys():
                     new_path = path.copy()
-                    new_path = new_path[:-1]
+                    new_path.append(d)
                     q.enqueue(new_path)
-                else:
-                    break
-        
-
 
     # Check if we need to make rooms_unexplored False
     rooms_unexplored = any("?" in direction.values() for direction in trav_graph.values())
+
 # print(trav_graph)
 
 

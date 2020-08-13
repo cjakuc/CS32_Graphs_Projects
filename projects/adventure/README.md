@@ -1,3 +1,5 @@
+### adv copy 2.py is my best solution so far. The path and moves of my best traversal so far are in best_traversal.txt (956 moves!)
+
 ## Description
 
 You are provided with a pre-generated graph consisting of 500 rooms. You are responsible for filling `traversal_path` with directions that, when walked in order, will visit every room on the map at least once.
